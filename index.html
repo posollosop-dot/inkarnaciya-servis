@@ -43,14 +43,16 @@
 
 <style>
   :root {
-    --bg: #0f1419;
-    --bg-card: #1a2129;
-    --text: #e8ecef;
-    --text-dim: #9aa5b1;
-    --accent: #3ddc84;
-    --accent-dark: #2bb86a;
-    --glitch: #ff4fc2;
-    --border: #2a333d;
+    --bg: #e9f1fa;
+    --bg-sky-top: #f7fbff;
+    --bg-sky-bottom: #cfe1f3;
+    --bg-card: #ffffff;
+    --text: #14212e;
+    --text-dim: #566a7e;
+    --accent: #22b86d;
+    --accent-dark: #178f53;
+    --glitch: #ff2fb5;
+    --border: #d3dfec;
     --font-pixel: "Press Start 2P", "Courier New", monospace;
   }
 
@@ -60,35 +62,24 @@
 
   body {
     position: relative;
-    background: var(--bg);
+    background: linear-gradient(180deg, var(--bg-sky-top) 0%, var(--bg-sky-bottom) 100%);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     line-height: 1.5;
     overflow-x: hidden;
   }
 
-  /* Футуристичный "небесный вихрь" на фоне — спокойный, не мешает чтению.
-     z-index:0 + контент выше на z-index:1 (ниже), т.к. отрицательный z-index
-     на фиксированном элементе может уйти под фон html/body и стать невидимым. */
-  body::before {
-    content: "";
+  /* Вид сверху на облачный вихрь — рисуется на canvas (скрипт внизу страницы).
+     z-index:0, контент выше на z-index:1: отрицательный z-index на фиксированном
+     элементе может уйти под фон и стать невидимым. */
+  #sky {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 140vmax;
-    height: 140vmax;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     z-index: 0;
     pointer-events: none;
-    background: conic-gradient(
-      from 0deg,
-      rgba(61, 220, 132, 0.28),
-      rgba(255, 79, 194, 0.22),
-      rgba(61, 220, 132, 0.08),
-      rgba(255, 79, 194, 0.22),
-      rgba(61, 220, 132, 0.28)
-    );
-    filter: blur(60px);
-    transform: translate(-50%, -50%);
+    filter: blur(10px);
   }
 
   body > * {
@@ -96,15 +87,7 @@
     z-index: 1;
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    body::before {
-      animation: vortex-spin 70s linear infinite;
-    }
-  }
-
-  @keyframes vortex-spin {
-    to { transform: translate(-50%, -50%) rotate(360deg); }
-  }
+  body > #sky { z-index: 0; }
 
   .wrap {
     max-width: 880px;
@@ -138,7 +121,7 @@
     display: inline-block;
     padding: 14px 28px;
     background: var(--accent);
-    color: #0f1419;
+    color: var(--text);
     font-weight: 600;
     text-decoration: none;
     border-radius: 10px;
@@ -167,10 +150,13 @@
   }
 
   .card {
-    background: var(--bg-card);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 22px;
+    box-shadow: 0 8px 28px rgba(40, 70, 110, 0.10);
   }
 
   .card-head {
@@ -185,7 +171,7 @@
     width: 36px;
     height: 36px;
     shape-rendering: crispEdges;
-    filter: drop-shadow(0 0 5px rgba(61, 220, 132, 0.45));
+    filter: drop-shadow(0 2px 6px rgba(23, 143, 83, 0.35));
   }
 
   .pixel-icon .pxa { fill: var(--accent); }
@@ -219,7 +205,7 @@
 
   .card .price {
     font-family: var(--font-pixel);
-    color: var(--accent);
+    color: var(--accent-dark);
     font-size: 15px;
     line-height: 1.8;
     margin: 12px 0 10px;
@@ -231,10 +217,13 @@
   }
 
   .how {
-    background: var(--bg-card);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 28px;
+    box-shadow: 0 8px 28px rgba(40, 70, 110, 0.10);
   }
 
   .how ol {
@@ -287,6 +276,8 @@
 </style>
 </head>
 <body>
+
+<canvas id="sky" aria-hidden="true"></canvas>
 
 <header class="hero">
   <div class="wrap">
@@ -406,6 +397,91 @@
 <footer>
   Инкарнация Сервис · 89392566144
 </footer>
+
+<script>
+(function () {
+  var canvas = document.getElementById("sky");
+  if (!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext("2d");
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ARMS = 3;
+  var TURNS = 2.6;
+  var width, height, cx, cy, maxR, dpr;
+  var angle = 0;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx = width / 2;
+    cy = height * 0.42;
+    maxR = Math.max(width, height) * 0.78;
+    draw();
+  }
+
+  // Рукава спирали — как облачный циклон при взгляде сверху: широкие ближе к краю,
+  // прозрачнее к краю, собираются к "глазу" в центре.
+  function drawArm(offset, color) {
+    var thetaMax = TURNS * Math.PI * 2;
+    var step = 0.07;
+    var k = maxR / thetaMax;
+    ctx.strokeStyle = color;
+    ctx.lineCap = "round";
+    var prevX = null, prevY = null;
+    for (var t = 0.6; t <= thetaMax; t += step) {
+      var r = k * t;
+      var a = t + offset + angle;
+      var x = cx + r * Math.cos(a);
+      var y = cy + r * Math.sin(a) * 0.82;
+      if (prevX !== null) {
+        ctx.lineWidth = 18 + r * 0.16;
+        ctx.globalAlpha = 0.07 + 0.55 * (1 - r / maxR);
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+      prevX = x; prevY = y;
+    }
+  }
+
+  function draw() {
+    ctx.globalAlpha = 1;
+    ctx.clearRect(0, 0, width, height);
+    for (var i = 0; i < ARMS; i++) {
+      var offset = (Math.PI * 2 / ARMS) * i;
+      drawArm(offset, "rgba(255, 255, 255, 1)");
+      drawArm(offset + 0.35, "rgba(170, 205, 240, 1)");
+    }
+    // "Глаз" вихря — мягкое светлое ядро в центре
+    ctx.globalAlpha = 1;
+    var eye = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.22);
+    eye.addColorStop(0, "rgba(255, 255, 255, 0.85)");
+    eye.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = eye;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  var last = 0;
+  function frame(ts) {
+    if (!document.hidden) {
+      if (ts - last > 33) {
+        angle -= 0.0025;
+        draw();
+        last = ts;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+  if (!reduceMotion) requestAnimationFrame(frame);
+})();
+</script>
 
 </body>
 </html>
