@@ -67,7 +67,9 @@
     overflow-x: hidden;
   }
 
-  /* Футуристичный "небесный вихрь" на фоне — спокойный, не мешает чтению */
+  /* Футуристичный "небесный вихрь" на фоне — спокойный, не мешает чтению.
+     z-index:0 + контент выше на z-index:1 (ниже), т.к. отрицательный z-index
+     на фиксированном элементе может уйти под фон html/body и стать невидимым. */
   body::before {
     content: "";
     position: fixed;
@@ -75,18 +77,23 @@
     left: 50%;
     width: 140vmax;
     height: 140vmax;
-    z-index: -1;
+    z-index: 0;
     pointer-events: none;
     background: conic-gradient(
       from 0deg,
-      rgba(61, 220, 132, 0.16),
-      rgba(255, 79, 194, 0.12),
-      rgba(61, 220, 132, 0.05),
-      rgba(255, 79, 194, 0.12),
-      rgba(61, 220, 132, 0.16)
+      rgba(61, 220, 132, 0.28),
+      rgba(255, 79, 194, 0.22),
+      rgba(61, 220, 132, 0.08),
+      rgba(255, 79, 194, 0.22),
+      rgba(61, 220, 132, 0.28)
     );
     filter: blur(60px);
     transform: translate(-50%, -50%);
+  }
+
+  body > * {
+    position: relative;
+    z-index: 1;
   }
 
   @media (prefers-reduced-motion: no-preference) {
