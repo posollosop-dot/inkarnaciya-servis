@@ -13,6 +13,10 @@
 <meta property="og:description" content="Восстановление данных, установка Windows, удаление вирусов, снятие пароля WinRAR. Удалённо, по всей России и миру.">
 <meta property="og:locale" content="ru_RU">
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -47,15 +51,52 @@
     --accent-dark: #2bb86a;
     --glitch: #ff4fc2;
     --border: #2a333d;
+    --font-pixel: "Press Start 2P", "Courier New", monospace;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html { background: var(--bg); }
+
   body {
+    position: relative;
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* Футуристичный "небесный вихрь" на фоне — спокойный, не мешает чтению */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 140vmax;
+    height: 140vmax;
+    z-index: -1;
+    pointer-events: none;
+    background: conic-gradient(
+      from 0deg,
+      rgba(61, 220, 132, 0.16),
+      rgba(255, 79, 194, 0.12),
+      rgba(61, 220, 132, 0.05),
+      rgba(255, 79, 194, 0.12),
+      rgba(61, 220, 132, 0.16)
+    );
+    filter: blur(60px);
+    transform: translate(-50%, -50%);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    body::before {
+      animation: vortex-spin 70s linear infinite;
+    }
+  }
+
+  @keyframes vortex-spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
   }
 
   .wrap {
@@ -71,8 +112,12 @@
   }
 
   header.hero h1 {
-    font-size: clamp(28px, 5vw, 42px);
-    margin-bottom: 14px;
+    font-family: var(--font-pixel);
+    font-size: clamp(18px, 4vw, 28px);
+    line-height: 1.6;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    text-wrap: balance;
   }
 
   header.hero p.sub {
@@ -97,8 +142,10 @@
   section { padding: 48px 0; }
 
   h2 {
-    font-size: 26px;
-    margin-bottom: 24px;
+    font-family: var(--font-pixel);
+    font-size: clamp(14px, 3vw, 18px);
+    line-height: 1.8;
+    margin-bottom: 28px;
     text-align: center;
   }
 
@@ -141,18 +188,34 @@
   .pixel-icon .pxg {
     fill: var(--glitch);
     filter: drop-shadow(0 0 4px var(--glitch));
+    transform-origin: center;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pixel-icon .pxg {
+      animation: glitch-pulse 2.4s ease-in-out infinite;
+    }
+  }
+
+  @keyframes glitch-pulse {
+    0%, 100% { opacity: 1; transform: scale(1) translate(0, 0); }
+    45% { opacity: 0.5; transform: scale(1.5) translate(1px, -1px); }
+    55% { opacity: 1; transform: scale(1) translate(-1px, 1px); }
   }
 
   .card h3 {
-    font-size: 18px;
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    line-height: 1.7;
     margin: 0;
   }
 
   .card .price {
+    font-family: var(--font-pixel);
     color: var(--accent);
-    font-weight: 700;
-    font-size: 20px;
-    margin-bottom: 10px;
+    font-size: 15px;
+    line-height: 1.8;
+    margin: 12px 0 10px;
   }
 
   .card p {
